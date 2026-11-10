@@ -1,13 +1,12 @@
 import os
 import sys
 
-# Ensure parent directory is in Python path so server.py and its assets can be found
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-if parent_dir not in sys.path:
-    sys.path.insert(0, parent_dir)
+# Vercel sets VERCEL=1 in environment
+os.environ["VERCEL"] = "1"
+
+# Add project root to Python path
+root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if root not in sys.path:
+    sys.path.insert(0, root)
 
 from server import app
-
-# Export app for Vercel Serverless
-# Vercel's ASGI bridge will automatically detect and run `app`

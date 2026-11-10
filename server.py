@@ -3,11 +3,12 @@ import json
 import sqlite3
 import hashlib
 import uuid
+import shutil
 from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 
 from fastapi import FastAPI, HTTPException, Depends, Header, Query, UploadFile, File, Form, status
-from fastapi.responses import JSONResponse, FileResponse, StreamingResponse
+from fastapi.responses import JSONResponse, FileResponse, StreamingResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, EmailStr
@@ -22,9 +23,21 @@ except ImportError:
     openpyxl = None
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "database", "chg_intelligence.db")
+ORIGINAL_DB_PATH = os.path.join(BASE_DIR, "database", "chg_intelligence.db")
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
+
+# ─────────────────────────────────────────────────────────────────────────────
+# VERCEL COMPATIBILITY: copy DB to /tmp (writable) on every cold start
+# ─────────────────────────────────────────────────────────────────────────────
+IS_VERCEL = os.environ.get("VERCEL") == "1" or not os.access(os.path.dirname(ORIGINAL_DB_PATH), os.W_OK)
+if IS_VERCEL:
+    TMP_DB_PATH = "/tmp/chg_intelligence.db"
+    if not os.path.exists(TMP_DB_PATH) and os.path.exists(ORIGINAL_DB_PATH):
+        shutil.copy2(ORIGINAL_DB_PATH, TMP_DB_PATH)
+    DB_PATH = TMP_DB_PATH if os.path.exists(TMP_DB_PATH) else ORIGINAL_DB_PATH
+else:
+    DB_PATH = ORIGINAL_DB_PATH
 
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "cleopatra_executive_jwt_super_secret_key_2026")
 ALGORITHM = "HS256"
@@ -1287,20 +1300,40 @@ if os.path.exists(STATIC_DIR):
 def health_check():
     return {
         "status": "healthy",
+        "is_vercel": IS_VERCEL,
+        "db_path": DB_PATH,
         "database_exists": os.path.exists(DB_PATH),
-        "static_exists": os.path.exists(STATIC_DIR)
+        "static_exists": os.path.exists(STATIC_DIR),
+        "assets_exists": os.path.exists(ASSETS_DIR),
+        "base_dir": BASE_DIR
     }
 
 @app.get("/")
+@app.get("/api")
+@app.get("/api/")
 def serve_index():
-    candidates = [
-        os.path.join(STATIC_DIR, "index.html"),
-        os.path.join(BASE_DIR, "index.html")
-    ]
-    for c in candidates:
-        if os.path.exists(c):
-            return FileResponse(c)
-    return {"message": "Cleopatra Hospitals Group API running. Static files loading..."}
+    index_path = os.path.join(STATIC_DIR, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return HTMLResponse("<h3>Cleopatra Hospitals Group — Server running. /static/index.html not found.</h3>", status_code=200)
+
+@app.get("/static/app.js")
+def serve_app_js():
+    path = os.path.join(STATIC_DIR, "app.js")
+    if os.path.exists(path):
+        return FileResponse(path, media_type="application/javascript")
+    raise HTTPException(status_code=404, detail="app.js not found")
+
+@app.get("/assets/{filename}")
+def serve_assets(filename: str):
+    path = os.path.join(ASSETS_DIR, filename)
+    if os.path.exists(path):
+        return FileResponse(path)
+    # fallback to static/assets
+    alt = os.path.join(STATIC_DIR, "assets", filename)
+    if os.path.exists(alt):
+        return FileResponse(alt)
+    raise HTTPException(status_code=404, detail=f"{filename} not found")
 
 if __name__ == "__main__":
     import uvicorn
