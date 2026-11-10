@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cleopatra Hospitals Group | Executive Intelligence Platform</title>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        chg: {
+                            primary: '#0697A8',
+                            hover: '#058190',
+                            navy: '#023D4F',
+                            cyan: '#00B4D8',
+                            accent: '#0D9488',
+                            light: '#F8FAFC',
+                            card: '#FFFFFF',
+                            darkCard: '#0f172a',
+                            darkBg: '#090d16'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Apache ECharts -->
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js"></script>
+    <!-- SheetJS for client-side Excel handling -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        html[dir="rtl"] body {
+            font-family: 'Cairo', 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        .chg-gradient {
+            background: linear-gradient(135deg, #023D4F 0%, #0697A8 100%);
+        }
+        .chg-card-hover {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .chg-card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px -10px rgba(6, 151, 168, 0.18);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.04);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(6, 151, 168, 0.3);
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(6, 151, 168, 0.6);
+        }
+    </style>
+</head>
+<body class="bg-chg-light text-slate-800 dark:bg-chg-darkBg dark:text-slate-100 min-h-screen flex flex-col antialiased transition-colors duration-200">
+
+    <!-- ====================================================================== -->
+    <!-- AUTHENTICATION OVERLAY / LOGIN MODAL -->
+    <!-- ====================================================================== -->
+    <div id="login-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-md p-4 transition-all">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-md overflow-hidden animate-fade-in">
+            <!-- Brand Banner -->
+            <div class="chg-gradient p-6 text-white text-center relative">
+                <!-- Language Switcher in Login Card -->
+                <div class="absolute top-3 right-3">
+                    <button type="button" onclick="toggleLanguage()" class="px-2.5 py-1 rounded-full text-[11px] font-bold bg-white/15 hover:bg-white/25 text-white backdrop-blur border border-white/25 transition flex items-center gap-1.5 shadow-sm">
+                        <i class="fa-solid fa-globe text-cyan-300"></i>
+                        <span class="lang-label-text">العربية</span>
+                    </button>
+                </div>
+                <!-- Prominent Corporate Logo Card -->
+                <div class="w-36 h-40 bg-white rounded-2xl shadow-xl mx-auto flex items-center justify-center p-3 mb-3 border-2 border-white/80">
+                    <img src="/assets/chg-logo.png" alt="Cleopatra Hospitals Group Logo" class="max-h-full max-w-full object-contain">
+                </div>
+                <h1 class="text-xl font-extrabold tracking-tight" data-i18n="brand_title">CLEOPATRA HOSPITALS GROUP</h1>
+                <p class="text-xs text-cyan-100 font-medium tracking-widest uppercase mt-0.5" data-i18n="brand_subtitle">Executive Intelligence Platform</p>
+                <div class="mt-2.5 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur text-[11px] font-medium text-white border border-white/20">
+                    <i class="fa-solid fa-shield-halved text-cyan-300"></i> <span data-i18n="rls_protected_badge">Department-Level RLS Protected</span>
+                </div>
+            </div>
+
+            <!-- Login Form -->
+            <div class="p-6 space-y-4">
+                <div id="login-error" class="hidden p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 text-xs font-medium border border-rose-200 dark:border-rose-900 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-exclamation text-base"></i>
+                    <span id="login-error-text">Invalid credentials.</span>
+                </div>
+
+                <form id="login-form" class="space-y-4" onsubmit="handleLogin(event)">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Corporate Email</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                <i class="fa-regular fa-envelope text-sm"></i>
+                            </span>
+                            <input type="email" id="login-email" required
+                                class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-chg-primary focus:outline-none transition"
+                                placeholder="name@cleopatra.com">
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider">Password</label>
+                            <span class="text-xs text-chg-primary hover:underline cursor-pointer" onclick="showForgotPasswordInfo()">Forgot password?</span>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                <i class="fa-solid fa-lock text-sm"></i>
+                            </span>
+                            <input type="password" id="login-password" required
+                                class="w-full pl-9 pr-10 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-slate-900 dark:text-white text-sm focus:ring-2 focus:ring-chg-primary focus:outline-none transition"
+                                placeholder="••••••••">
+                            <button type="button" onclick="togglePasswordVisibility('login-password')" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+                                <i class="fa-regular fa-eye text-sm" id="eye-login-password"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="remember-me" checked class="rounded text-chg-primary focus:ring-chg-primary">
+                            <span class="text-slate-600 dark:text-slate-400">Remember session</span>
+                        </label>
+                    </div>
+
+                    <button type="submit" id="login-submit-btn"
+                        class="w-full py-2.5 px-4 rounded-xl font-semibold text-white bg-chg-primary hover:bg-chg-hover active:scale-[0.99] transition shadow-lg shadow-chg-primary/25 flex items-center justify-center gap-2">
+                        <span>Sign In Securely</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </form>
+
+                <!-- Quick Role Switcher for Testing -->
+                <div class="pt-3 border-t border-slate-200 dark:border-slate-800">
+                    <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider text-center mb-2">
+                        Fast Login Demo Accounts
+                    </p>
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <button onclick="fillLogin('ceo@cleopatra.com', 'Ceo@123')"
+                            class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-chg-primary bg-slate-50 dark:bg-slate-800/60 text-left transition hover:bg-teal-50/50">
+                            <div class="font-bold text-chg-navy dark:text-cyan-400">CEO</div>
+                            <div class="text-[10px] text-slate-500 truncate">Consolidated View</div>
+                        </button>
+                        <button onclick="fillLogin('admin@cleopatra.com', 'Admin@123')"
+                            class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-chg-primary bg-slate-50 dark:bg-slate-800/60 text-left transition hover:bg-teal-50/50">
+                            <div class="font-bold text-emerald-600 dark:text-emerald-400">Super Admin</div>
+                            <div class="text-[10px] text-slate-500 truncate">Full Admin & Users</div>
+                        </button>
+                        <button onclick="fillLogin('oncology.manager@cleopatra.com', 'Dept@123')"
+                            class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-chg-primary bg-slate-50 dark:bg-slate-800/60 text-left transition hover:bg-teal-50/50">
+                            <div class="font-bold text-amber-600 dark:text-amber-400">Oncology HOD</div>
+                            <div class="text-[10px] text-slate-500 truncate">Locked to Oncology</div>
+                        </button>
+                        <button onclick="fillLogin('cardiology.manager@cleopatra.com', 'Dept@123')"
+                            class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 hover:border-chg-primary bg-slate-50 dark:bg-slate-800/60 text-left transition hover:bg-teal-50/50">
+                            <div class="font-bold text-indigo-600 dark:text-indigo-400">Cardiology HOD</div>
+                            <div class="text-[10px] text-slate-500 truncate">Locked to Cardiology</div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ====================================================================== -->
+    <!-- MAIN PLATFORM APPLICATION LAYOUT -->
+    <!-- ====================================================================== -->
+    <div id="app-container" class="min-h-screen flex flex-col">
+        <!-- Top Executive Navbar -->
+        <header class="sticky top-0 z-40 bg-white/95 dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-slate-800">
+            <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+                <!-- Brand & Logo -->
+                <div class="flex items-center gap-3">
+                    <div class="h-12 w-12 rounded-xl p-1 bg-white border border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-sm">
+                        <img src="/assets/chg-logo.png" alt="Cleopatra Hospitals Group" class="max-h-full max-w-full object-contain">
+                    </div>
+                    <div>
+                        <div class="font-bold text-base tracking-tight text-chg-navy dark:text-white flex items-center gap-2">
+                            <span>CLEOPATRA HOSPITALS GROUP</span>
+                            <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded bg-teal-50 dark:bg-teal-950/60 text-chg-primary border border-chg-primary/20">Executive</span>
+                        </div>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Enterprise Intelligence & RLS Analytics Platform</p>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="hidden md:flex items-center gap-1">
+                    <button onclick="switchTab('overview')" id="tab-btn-overview"
+                        class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold text-chg-primary bg-teal-50 dark:bg-slate-800 dark:text-teal-400 transition flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line"></i> Overview
+                    </button>
+                    <button onclick="switchTab('departments')" id="tab-btn-departments"
+                        class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-chg-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-2">
+                        <i class="fa-solid fa-hospital-user"></i> Department Matrix
+                    </button>
+                    <button onclick="switchTab('transactions')" id="tab-btn-transactions"
+                        class="tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-chg-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-2">
+                        <i class="fa-solid fa-receipt"></i> Admissions Ledger
+                    </button>
+                    <!-- Admin Only Tabs -->
+                    <button onclick="switchTab('import')" id="tab-btn-import"
+                        class="admin-only hidden tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-chg-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-2">
+                        <i class="fa-solid fa-cloud-arrow-up"></i> Data Import Engine
+                    </button>
+                    <button onclick="switchTab('users')" id="tab-btn-users"
+                        class="admin-only hidden tab-btn px-3.5 py-2 rounded-lg text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-chg-primary hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-2">
+                        <i class="fa-solid fa-users-gear"></i> User Management
+                    </button>
+                </nav>
+
+                <!-- Right Utility Bar (Language, Theme & Profile) -->
+                <div class="flex items-center gap-2.5">
+                    <!-- Arabic / English Language Toggle Button -->
+                    <button type="button" onclick="toggleLanguage()" id="lang-toggle-nav-btn"
+                        class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:border-chg-primary hover:text-chg-primary transition shadow-xs">
+                        <i class="fa-solid fa-globe text-chg-primary"></i>
+                        <span class="lang-label-text">العربية</span>
+                    </button>
+
+                    <!-- RLS Security Badge Indicator -->
+                    <div id="rls-badge-container" class="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border">
+                        <i class="fa-solid fa-lock text-[10px]" id="rls-icon"></i>
+                        <span id="rls-badge-text">Enforced RLS</span>
+                    </div>
+
+                    <!-- Dark Mode Toggle -->
+                    <button onclick="toggleDarkMode()" class="p-2 rounded-lg text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+                        <i class="fa-solid fa-moon text-sm dark:hidden"></i>
+                        <i class="fa-solid fa-sun text-sm hidden dark:inline"></i>
+                    </button>
+
+                    <!-- User Pill & Logout -->
+                    <div class="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
+                        <div class="text-right hidden sm:block">
+                            <div class="text-xs font-bold text-slate-800 dark:text-slate-200" id="user-display-name">Loading...</div>
+                            <div class="text-[10px] text-slate-500 dark:text-slate-400" id="user-display-role">ROLE</div>
+                        </div>
+                        <button onclick="handleLogout()" title="Sign Out"
+                            class="p-2 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition">
+                            <i class="fa-solid fa-arrow-right-from-bracket text-sm"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- ================================================================== -->
+        <!-- EXECUTIVE FILTER PANEL -->
+        <!-- ================================================================== -->
+        <section class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+            <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <!-- Filter Controls Grid -->
+                    <div class="flex flex-wrap items-center gap-2 text-xs">
+                        <!-- Date Range Shortcut -->
+                        <div class="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                            <button onclick="setDateRange('all')" class="date-chip px-2 py-1 rounded font-medium bg-white dark:bg-slate-700 text-chg-primary shadow-xs">All Time</button>
+                            <button onclick="setDateRange('2024')" class="date-chip px-2 py-1 rounded font-medium text-slate-600 dark:text-slate-400 hover:text-chg-primary">2024</button>
+                            <button onclick="setDateRange('2023')" class="date-chip px-2 py-1 rounded font-medium text-slate-600 dark:text-slate-400 hover:text-chg-primary">2023</button>
+                            <button onclick="setDateRange('2022')" class="date-chip px-2 py-1 rounded font-medium text-slate-600 dark:text-slate-400 hover:text-chg-primary">2022</button>
+                            <button onclick="setDateRange('2021')" class="date-chip px-2 py-1 rounded font-medium text-slate-600 dark:text-slate-400 hover:text-chg-primary">2021</button>
+                            <button onclick="setDateRange('2020')" class="date-chip px-2 py-1 rounded font-medium text-slate-600 dark:text-slate-400 hover:text-chg-primary">2020</button>
+                            <button onclick="setDateRange('2019')" class="date-chip px-2 py-1 rounded font-medium text-slate-600 dark:text-slate-400 hover:text-chg-primary">2019</button>
+                        </div>
+
+                        <!-- Department Filter (Disabled & Locked for Dept Managers) -->
+                        <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-2.5 py-1.5 rounded-lg">
+                            <i class="fa-solid fa-stethoscope text-slate-400"></i>
+                            <select id="filter-department" onchange="applyFilters()" class="bg-transparent font-medium text-slate-800 dark:text-slate-200 outline-none cursor-pointer">
+                                <option value="all">All Clinical Departments</option>
+                            </select>
+                            <span id="dept-lock-icon" class="hidden text-amber-500 text-xs ml-1" title="Row-Level Security: Department Locked">
+                                <i class="fa-solid fa-lock"></i>
+                            </span>
+                        </div>
+
+                        <!-- Insurance Payer Filter -->
+                        <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-2.5 py-1.5 rounded-lg">
+                            <i class="fa-solid fa-shield-virus text-slate-400"></i>
+                            <select id="filter-payer" onchange="applyFilters()" class="bg-transparent font-medium text-slate-800 dark:text-slate-200 outline-none cursor-pointer">
+                                <option value="all">All Payers / Insurers</option>
+                                <option value="Medicare">Medicare</option>
+                                <option value="Blue Cross">Blue Cross</option>
+                                <option value="Cigna">Cigna</option>
+                                <option value="Aetna">Aetna</option>
+                                <option value="UnitedHealthcare">UnitedHealthcare</option>
+                            </select>
+                        </div>
+
+                        <!-- Admission Urgency Filter -->
+                        <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 px-2.5 py-1.5 rounded-lg">
+                            <i class="fa-solid fa-truck-medical text-slate-400"></i>
+                            <select id="filter-urgency" onchange="applyFilters()" class="bg-transparent font-medium text-slate-800 dark:text-slate-200 outline-none cursor-pointer">
+                                <option value="all">All Urgency Types</option>
+                                <option value="Emergency">Emergency</option>
+                                <option value="Urgent">Urgent</option>
+                                <option value="Elective">Elective</option>
+                            </select>
+                        </div>
+
+                        <!-- Data Quality Toggle: Duplicates -->
+                        <label class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/80 cursor-pointer text-slate-600 dark:text-slate-300 hover:border-chg-primary transition">
+                            <input type="checkbox" id="toggle-duplicates" onchange="applyFilters()" class="rounded text-chg-primary focus:ring-chg-primary">
+                            <span>Include Raw Duplicates (5,500)</span>
+                        </label>
+
+                        <!-- Clear Filters -->
+                        <button onclick="resetFilters()" class="px-2.5 py-1.5 rounded-lg text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-1 font-semibold">
+                            <i class="fa-solid fa-rotate-left"></i> Reset
+                        </button>
+                    </div>
+
+                    <!-- Reporting Period Indicator -->
+                    <div class="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                        <i class="fa-regular fa-calendar-check text-chg-primary"></i>
+                        <span>Reporting Period: <strong class="text-slate-700 dark:text-slate-300 font-semibold" id="active-period-label">May 2019 – May 2024 (5 Operating Years)</strong></span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================================================================== -->
+        <!-- TAB CONTENTS -->
+        <!-- ================================================================== -->
+        <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+            <!-- -------------------------------------------------------------- -->
+            <!-- 1. EXECUTIVE OVERVIEW DASHBOARD -->
+            <!-- -------------------------------------------------------------- -->
+            <div id="view-overview" class="space-y-6">
+                <!-- KPI CARDS GRID -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Total Billed Revenue -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm chg-card-hover relative overflow-hidden">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n="kpi_revenue_title">Total Billed Revenue</span>
+                            <div class="w-8 h-8 rounded-lg bg-teal-50 dark:bg-teal-950/60 text-chg-primary flex items-center justify-center">
+                                <i class="fa-solid fa-dollar-sign text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="text-2xl font-extrabold text-slate-900 dark:text-white" id="kpi-revenue">$0.00</div>
+                        <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
+                            <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-arrow-trend-up"></i> +8.4% YoY
+                            </span>
+                            <span class="text-slate-400 text-[10px]" title="Sum of all gross patient charges">Σ Billing Amount</span>
+                        </div>
+                    </div>
+
+                    <!-- Total Admissions -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm chg-card-hover relative overflow-hidden">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n="kpi_admissions_title">Total Admissions</span>
+                            <div class="w-8 h-8 rounded-lg bg-cyan-50 dark:bg-cyan-950/60 text-chg-cyan flex items-center justify-center">
+                                <i class="fa-solid fa-bed-pulse text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="text-2xl font-extrabold text-slate-900 dark:text-white" id="kpi-admissions">0</div>
+                        <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
+                            <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-user-check"></i> Clean Deduplicated
+                            </span>
+                            <span class="text-slate-400 text-[10px]" title="Count of unique inpatient admissions">Unique Cases</span>
+                        </div>
+                    </div>
+
+                    <!-- Average Revenue Per Patient (ARPA) -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm chg-card-hover relative overflow-hidden">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n="kpi_avg_revenue_title">Avg Billing / Patient</span>
+                            <div class="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
+                                <i class="fa-solid fa-file-invoice-dollar text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="text-2xl font-extrabold text-slate-900 dark:text-white" id="kpi-avg-revenue">$0.00</div>
+                        <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
+                            <span class="text-slate-600 dark:text-slate-300 font-semibold">Yield Index: 1.02x</span>
+                            <span class="text-slate-400 text-[10px]" title="Revenue divided by Admissions">ARPA Index</span>
+                        </div>
+                    </div>
+
+                    <!-- Average Length of Stay (ALOS) -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm chg-card-hover relative overflow-hidden">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" data-i18n="kpi_alos_title">Avg Length of Stay (ALOS)</span>
+                            <div class="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                                <i class="fa-solid fa-calendar-day text-sm"></i>
+                            </div>
+                        </div>
+                        <div class="text-2xl font-extrabold text-slate-900 dark:text-white" id="kpi-alos">0.0 Days</div>
+                        <div class="flex items-center justify-between mt-2 pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
+                            <span class="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                                <i class="fa-solid fa-check"></i> Standard Turnaround
+                            </span>
+                            <span class="text-slate-400 text-[10px]">Avg Inpatient Days</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SECONDARY KPIS ROW (TARGET ACHIEVEMENT, EXPENSES, MARGIN, ADJUSTMENTS) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Operating Margin -->
+                    <div class="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-semibold text-slate-500 uppercase" data-i18n="kpi_margin_title">Gross Operating Margin</span>
+                            <div class="text-lg font-bold text-chg-navy dark:text-cyan-400" id="kpi-margin">32.0%</div>
+                            <div class="text-[10px] text-slate-400" data-i18n="kpi_margin_note">Benchmark Cost Ratio: 68%</div>
+                        </div>
+                        <div class="text-2xl text-teal-500 opacity-80"><i class="fa-solid fa-pie-chart"></i></div>
+                    </div>
+
+                    <!-- Target Achievement -->
+                    <div class="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-semibold text-slate-500 uppercase" data-i18n="kpi_target_title">Annual Target Achievement</span>
+                            <div class="text-lg font-bold text-emerald-600 dark:text-emerald-400" id="kpi-target-pct">0.0%</div>
+                            <div class="text-[10px] text-slate-400" id="kpi-budget-note">Vs $1.92B Annual Target</div>
+                        </div>
+                        <div class="text-2xl text-emerald-500 opacity-80"><i class="fa-solid fa-bullseye"></i></div>
+                    </div>
+
+                    <!-- Active Medical Staff & Units -->
+                    <div class="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-semibold text-slate-500 uppercase" data-i18n="kpi_network_title">Active Medical Network</span>
+                            <div class="text-lg font-bold text-indigo-600 dark:text-indigo-400" id="kpi-network">0 Doctors</div>
+                            <div class="text-[10px] text-slate-400" id="kpi-facilities-note">Across Facilities</div>
+                        </div>
+                        <div class="text-2xl text-indigo-500 opacity-80"><i class="fa-solid fa-user-doctor"></i></div>
+                    </div>
+
+                    <!-- Outstanding Refunds / Negative Adjustments -->
+                    <div class="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-xs flex items-center justify-between">
+                        <div>
+                            <span class="text-[11px] font-semibold text-slate-500 uppercase" data-i18n="kpi_adjustments_title">Billing Adjustments / Refunds</span>
+                            <div class="text-lg font-bold text-rose-600 dark:text-rose-400" id="kpi-adjustments">-$0.00</div>
+                            <div class="text-[10px] text-slate-400" id="kpi-adjustments-count">0 negative claims audited</div>
+                        </div>
+                        <div class="text-2xl text-rose-500 opacity-80"><i class="fa-solid fa-receipt"></i></div>
+                    </div>
+                </div>
+
+                <!-- ========================================================== -->
+                <!-- EXECUTIVE CHARTS SECTION A & B -->
+                <!-- ========================================================== -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- 5-Year Monthly Revenue Trend (2 cols) -->
+                    <div class="lg:col-span-2 bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-chart-area text-chg-primary"></i> <span data-i18n="chart_trends_title">Monthly Revenue & Profitability Trajectory</span>
+                                </h3>
+                                <p class="text-xs text-slate-500" data-i18n="chart_trends_sub">Billed revenue vs estimated operating costs and gross margin over 5 operating years</p>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs">
+                                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-chg-primary"></span> Revenue</span>
+                                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-cyan-400"></span> Profit</span>
+                            </div>
+                        </div>
+                        <div id="chart-monthly-trends" class="w-full h-80"></div>
+                    </div>
+
+                    <!-- Department Revenue Contribution (1 col) -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-pie-chart text-chg-primary"></i> <span data-i18n="chart_donut_title">Specialty Contribution</span>
+                                </h3>
+                                <p class="text-xs text-slate-500" data-i18n="chart_donut_sub">Revenue split across clinical specialties</p>
+                            </div>
+                        </div>
+                        <div id="chart-department-donut" class="w-full h-80"></div>
+                    </div>
+                </div>
+
+                <!-- ========================================================== -->
+                <!-- EXECUTIVE CHARTS SECTION C & D (PAYERS & ADMISSION URGENCY) -->
+                <!-- ========================================================== -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Commercial Payers & Insurance Market Share -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div class="mb-4">
+                            <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                                <i class="fa-solid fa-building-shield text-chg-primary"></i> <span data-i18n="chart_payers_title">Payer Market Share & Receivables</span>
+                            </h3>
+                            <p class="text-xs text-slate-500" data-i18n="chart_payers_sub">Revenue distribution by major insurance carrier</p>
+                        </div>
+                        <div id="chart-payers-breakdown" class="w-full h-64"></div>
+                    </div>
+
+                    <!-- Admission Urgency & Bed Triage -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div class="mb-4">
+                            <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                                <i class="fa-solid fa-truck-medical text-amber-500"></i> <span data-i18n="chart_urgency_title">Admission Urgency Triage</span>
+                            </h3>
+                            <p class="text-xs text-slate-500" data-i18n="chart_urgency_sub">Elective vs Urgent vs Emergency patient admissions</p>
+                        </div>
+                        <div id="chart-urgency-breakdown" class="w-full h-64"></div>
+                    </div>
+
+                    <!-- Diagnostic Outcomes & Test Results -->
+                    <div class="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm">
+                        <div class="mb-4">
+                            <h3 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                                <i class="fa-solid fa-microscope text-indigo-500"></i> <span data-i18n="chart_diagnostics_title">Diagnostic Outcomes Quality</span>
+                            </h3>
+                            <p class="text-xs text-slate-500" data-i18n="chart_diagnostics_sub">Normal, Inconclusive, and Abnormal diagnostic rates</p>
+                        </div>
+                        <div id="chart-diagnostics-breakdown" class="w-full h-64"></div>
+                    </div>
+                </div>
+
+                <!-- ========================================================== -->
+                <!-- EXECUTIVE STRATEGIC INSIGHTS & ACTIONS PANEL (PHASE 3) -->
+                <!-- ========================================================== -->
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <i class="fa-solid fa-brain text-chg-primary"></i> <span data-i18n="insights_title">Executive Intelligence & Actionable Directives</span>
+                            </h3>
+                            <p class="text-xs text-slate-500" data-i18n="insights_sub">Automated diagnosis generated directly from live clinical & billing statistics</p>
+                        </div>
+                        <span class="px-2.5 py-1 rounded-full text-xs font-semibold bg-cyan-50 dark:bg-cyan-950/60 text-chg-primary border border-chg-primary/20" data-i18n="insights_badge">
+                            CEO Briefing
+                        </span>
+                    </div>
+
+                    <div id="executive-insights-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 animate-pulse bg-slate-50 dark:bg-slate-800/50">
+                            <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded w-1/3 mb-2"></div>
+                            <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded w-full mb-1"></div>
+                            <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded w-2/3"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- -------------------------------------------------------------- -->
+            <!-- 2. DEPARTMENT MATRIX DEEP DIVE -->
+            <!-- -------------------------------------------------------------- -->
+            <div id="view-departments" class="hidden space-y-6">
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <i class="fa-solid fa-hospital text-chg-primary"></i> Clinical Department Performance Matrix
+                            </h2>
+                            <p class="text-xs text-slate-500">Head-to-head comparison of all 6 hospital clinical specialties with Row Level Security boundaries</p>
+                        </div>
+                    </div>
+
+                    <!-- Department Comparison Cards Grid -->
+                    <div id="dept-cards-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6"></div>
+
+                    <!-- Department Performance Table -->
+                    <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold uppercase tracking-wider">
+                                <tr>
+                                    <th class="p-3.5">Department</th>
+                                    <th class="p-3.5">Clinical Specialty</th>
+                                    <th class="p-3.5 text-right">Admissions</th>
+                                    <th class="p-3.5 text-right">Gross Revenue</th>
+                                    <th class="p-3.5 text-right">Avg Revenue / Patient</th>
+                                    <th class="p-3.5 text-right">Avg Stay (Days)</th>
+                                    <th class="p-3.5 text-right">Contribution %</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dept-table-body" class="divide-y divide-slate-200 dark:divide-slate-800 font-medium"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- -------------------------------------------------------------- -->
+            <!-- 3. ADMISSIONS DETAILED TRANSACTIONS LEDGER -->
+            <!-- -------------------------------------------------------------- -->
+            <div id="view-transactions" class="hidden space-y-6">
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <i class="fa-solid fa-receipt text-chg-primary"></i> <span data-i18n="tx_title">Inpatient Admissions Financial Ledger</span>
+                            </h2>
+                            <p class="text-xs text-slate-500" id="transactions-count-summary">Displaying records with Row-Level Security enforcement</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <!-- Search Input -->
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                    <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                                </span>
+                                <input type="text" id="tx-search-input" onkeyup="handleTxSearch(event)"
+                                    class="pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-chg-primary w-56"
+                                    placeholder="Search patient, doctor, unit...">
+                            </div>
+                            <!-- Export CSV -->
+                            <button onclick="exportTransactionsCSV()"
+                                class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition flex items-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-file-csv"></i> <span data-i18n="tx_export_btn">Export CSV</span>
+                            </button>
+                            <!-- Add Single Record -->
+                            <button onclick="openCreateTxModal()"
+                                class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-chg-primary hover:bg-chg-hover text-white transition flex items-center gap-1.5 shadow-sm">
+                                <i class="fa-solid fa-plus"></i> <span data-i18n="tx_new_btn">New Admission</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Transactions Table -->
+                    <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-semibold uppercase tracking-wider">
+                                <tr>
+                                    <th class="p-3">Ref #</th>
+                                    <th class="p-3">Patient Name</th>
+                                    <th class="p-3">Department</th>
+                                    <th class="p-3">Admission</th>
+                                    <th class="p-3">Stay</th>
+                                    <th class="p-3">Doctor</th>
+                                    <th class="p-3">Hospital Facility</th>
+                                    <th class="p-3">Payer</th>
+                                    <th class="p-3 text-right">Billing Amount</th>
+                                    <th class="p-3 text-center">Urgency</th>
+                                    <th class="p-3 text-center">Outcome</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tx-table-body" class="divide-y divide-slate-200 dark:divide-slate-800 font-medium"></tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="flex items-center justify-between pt-3 text-xs text-slate-500">
+                        <span id="tx-page-info">Page 1 of 1</span>
+                        <div class="flex items-center gap-2">
+                            <button id="tx-prev-btn" onclick="changeTxPage(-1)" class="px-3 py-1 rounded border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40">Previous</button>
+                            <button id="tx-next-btn" onclick="changeTxPage(1)" class="px-3 py-1 rounded border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40">Next</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- -------------------------------------------------------------- -->
+            <!-- 4. ADMIN DATA IMPORT & DYNAMIC MAPPING ENGINE -->
+            <!-- -------------------------------------------------------------- -->
+            <div id="view-import" class="hidden space-y-6">
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="mb-6">
+                        <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-cloud-arrow-up text-chg-primary"></i> Data Management & File Ingestion Engine
+                        </h2>
+                        <p class="text-xs text-slate-500">Upload CSV, Excel (.xlsx/.xls) multi-sheet workbooks with dynamic field mapping, deduplication validation, and department ownership rules</p>
+                    </div>
+
+                    <!-- Upload Area -->
+                    <div class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-chg-primary rounded-2xl p-8 text-center cursor-pointer transition bg-slate-50/50 dark:bg-slate-800/30"
+                         onclick="document.getElementById('file-upload-input').click()">
+                        <input type="file" id="file-upload-input" class="hidden" accept=".csv, .xlsx, .xls" onchange="handleFileSelected(event)">
+                        <div class="w-14 h-14 rounded-full bg-teal-50 dark:bg-teal-950/60 text-chg-primary mx-auto flex items-center justify-center text-2xl mb-3 shadow-sm">
+                            <i class="fa-solid fa-file-excel"></i>
+                        </div>
+                        <h4 class="font-bold text-sm text-slate-800 dark:text-slate-200">Click to upload or drag & drop CSV or Excel files</h4>
+                        <p class="text-xs text-slate-500 mt-1">Supports UTF-8 CSV (semicolon or comma delimited) and multi-worksheet Excel files</p>
+                    </div>
+
+                    <!-- Dynamic Mapping Section (Hidden until file selected) -->
+                    <div id="mapping-container" class="hidden mt-6 space-y-4 pt-6 border-t border-slate-200 dark:border-slate-800">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                                    <i class="fa-solid fa-sliders text-chg-primary"></i> Dynamic Column Mapping Engine
+                                </h3>
+                                <p class="text-xs text-slate-500" id="mapping-file-info">Map your file columns to standard hospital business dimensions</p>
+                            </div>
+                            <button onclick="commitFileImport()" id="commit-import-btn"
+                                class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-chg-primary hover:bg-chg-hover transition shadow-md shadow-chg-primary/20 flex items-center gap-2">
+                                <i class="fa-solid fa-check-double"></i> Validate & Ingest Dataset
+                            </button>
+                        </div>
+
+                        <!-- Target Mapping Table -->
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase">
+                                    <tr>
+                                        <th class="p-3">Standard Business Field</th>
+                                        <th class="p-3">Required</th>
+                                        <th class="p-3">Source File Column</th>
+                                        <th class="p-3">Sample Preview Value</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="mapping-table-body" class="divide-y divide-slate-200 dark:divide-slate-800 font-medium"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Import Audit History -->
+                    <div class="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800">
+                        <h4 class="font-bold text-sm text-slate-800 dark:text-slate-200 mb-3 flex items-center gap-2">
+                            <i class="fa-solid fa-clock-rotate-left text-slate-400"></i> Import History & Audit Trail
+                        </h4>
+                        <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase">
+                                    <tr>
+                                        <th class="p-3">Batch ID</th>
+                                        <th class="p-3">File Name</th>
+                                        <th class="p-3 text-right">Total Rows</th>
+                                        <th class="p-3 text-right">Imported</th>
+                                        <th class="p-3 text-right">Duplicates Flagged</th>
+                                        <th class="p-3 text-right">Rejected (Unmapped)</th>
+                                        <th class="p-3">Status</th>
+                                        <th class="p-3">Timestamp</th>
+                                        <th class="p-3 text-center">إجراءات / Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="import-history-body" class="divide-y divide-slate-200 dark:divide-slate-800"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- -------------------------------------------------------------- -->
+            <!-- 5. ADMIN USER MANAGEMENT & RLS ASSIGNMENT -->
+            <!-- -------------------------------------------------------------- -->
+            <div id="view-users" class="hidden space-y-6">
+                <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div class="flex flex-wrap items-center justify-between gap-4 mb-6">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                <i class="fa-solid fa-users-gear text-chg-primary"></i> User Access & Row Level Security Management
+                            </h2>
+                            <p class="text-xs text-slate-500">Create and administer staff accounts, assign corporate roles, and configure strict department-level data boundaries</p>
+                        </div>
+                        <button onclick="openCreateUserModal()"
+                            class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-chg-primary hover:bg-chg-hover transition shadow-md shadow-chg-primary/20 flex items-center gap-2">
+                            <i class="fa-solid fa-user-plus"></i> Create New User
+                        </button>
+                    </div>
+
+                    <!-- Users Table -->
+                    <div class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                        <table class="w-full text-left text-xs">
+                            <thead class="bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300 uppercase">
+                                <tr>
+                                    <th class="p-3">User</th>
+                                    <th class="p-3">Corporate Email</th>
+                                    <th class="p-3">Role</th>
+                                    <th class="p-3">Assigned Department (RLS Scope)</th>
+                                    <th class="p-3">Status</th>
+                                    <th class="p-3">Last Login</th>
+                                    <th class="p-3 text-right">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table-body" class="divide-y divide-slate-200 dark:divide-slate-800 font-medium"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- Footer -->
+        <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-4">
+            <div class="max-w-[1600px] mx-auto px-4 text-center text-xs text-slate-400">
+                Cleopatra Hospitals Group (CHG) &copy; 2026. Enterprise Executive Intelligence & PostgreSQL Row-Level Security Platform.
+            </div>
+        </footer>
+    </div>
+
+    <!-- User Create / Edit Modal -->
+    <div id="user-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-lg p-6 animate-fade-in">
+            <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="font-bold text-base text-slate-900 dark:text-white" id="user-modal-title">Create New Corporate User</h3>
+                <button onclick="closeUserModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="user-form" class="mt-4 space-y-4" onsubmit="saveUser(event)">
+                <input type="hidden" id="user-modal-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Full Legal Name</label>
+                    <input type="text" id="user-modal-name" required class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-chg-primary outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Corporate Email Address</label>
+                    <input type="email" id="user-modal-email" required class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-chg-primary outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1" id="user-modal-password-label">Password</label>
+                    <input type="password" id="user-modal-password" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-chg-primary outline-none" placeholder="••••••••">
+                </div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Assigned Role</label>
+                        <select id="user-modal-role" onchange="handleModalRoleChange()" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-chg-primary outline-none">
+                            <option value="VIEWER">VIEWER</option>
+                            <option value="DEPARTMENT_MANAGER">DEPARTMENT_MANAGER</option>
+                            <option value="CEO">CEO</option>
+                            <option value="SUPER_ADMIN">SUPER_ADMIN</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Department (RLS Scope)</label>
+                        <select id="user-modal-department" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-sm focus:ring-2 focus:ring-chg-primary outline-none">
+                            <option value="">No Department (Company-wide)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 pt-2">
+                    <input type="checkbox" id="user-modal-active" checked class="rounded text-chg-primary focus:ring-chg-primary">
+                    <label for="user-modal-active" class="text-xs font-semibold text-slate-700 dark:text-slate-300">Account is Active and permitted to sign in</label>
+                </div>
+                <div class="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
+                    <button type="button" onclick="closeUserModal()" class="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-chg-primary hover:bg-chg-hover">Save User Profile</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- New Inpatient Admission Modal -->
+    <div id="tx-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-sm p-4 overflow-y-auto">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-xl p-6 animate-fade-in my-8 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+                <h3 class="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-hospital-user text-chg-primary"></i> Record New Inpatient Admission
+                </h3>
+                <button onclick="closeCreateTxModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <form id="tx-form" class="mt-4 space-y-3" onsubmit="saveTransaction(event)">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="sm:col-span-2">
+                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Patient Full Name</label>
+                        <input type="text" id="tx-patient-name" required class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-chg-primary" placeholder="e.g. Mona Mostafa">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Age</label>
+                        <input type="number" id="tx-patient-age" required min="1" max="120" value="45" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white outline-none focus:ring-1 focus:ring-chg-primary">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Gender</label>
+                        <select id="tx-patient-gender" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white outline-none">
+                            <option value="Female">Female</option>
+                            <option value="Male">Male</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Blood Type</label>
+                        <select id="tx-patient-blood" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white outline-none">
+                            <option value="A+">A+</option><option value="A-">A-</option>
+                            <option value="B+">B+</option><option value="B-">B-</option>
+                            <option value="O+">O+</option><option value="O-">O-</option>
+                            <option value="AB+">AB+</option><option value="AB-">AB-</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2 sm:col-span-1">
+                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Department</label>
+                        <select id="tx-department" required class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white outline-none"></select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Admission Date</label>
+                        <input type="date" id="tx-admission-date" required class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Discharge Date</label>
+                        <input type="date" id="tx-discharge-date" required class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Attending Physician</label>
+                        <input type="text" id="tx-doctor" required class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white outline-none" placeholder="e.g. Dr. Hani Gabriel">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Hospital Facility / Clinic</label>
+                        <input type="text" id="tx-hospital" required value="Cleopatra Hospital Heliopolis" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Insurance Carrier / Payer</label>
+                        <select id="tx-payer" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white outline-none">
+                            <option value="Medicare">Medicare</option>
+                            <option value="Blue Cross">Blue Cross</option>
+                            <option value="Cigna">Cigna</option>
+                            <option value="Aetna">Aetna</option>
+                            <option value="UnitedHealthcare">UnitedHealthcare</option>
+                            <option value="Cash / Self-Pay">Cash / Self-Pay</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Gross Billing Amount ($)</label>
+                        <input type="number" step="0.01" id="tx-billing" required value="28500.00" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-chg-navy dark:text-cyan-400 outline-none">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Admission Type</label>
+                        <select id="tx-urgency" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white outline-none">
+                            <option value="Elective">Elective</option>
+                            <option value="Urgent">Urgent</option>
+                            <option value="Emergency">Emergency</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Diagnostic Result</label>
+                        <select id="tx-outcome" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white outline-none">
+                            <option value="Normal">Normal</option>
+                            <option value="Inconclusive">Inconclusive</option>
+                            <option value="Abnormal">Abnormal</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-600 dark:text-slate-400 uppercase mb-1">Room #</label>
+                        <input type="number" id="tx-room" value="305" class="w-full px-3 py-2 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs text-slate-900 dark:text-white outline-none">
+                    </div>
+                </div>
+
+                <div class="flex justify-end gap-2 pt-4 border-t border-slate-200 dark:border-slate-800">
+                    <button type="button" onclick="closeCreateTxModal()" class="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">Cancel</button>
+                    <button type="submit" id="tx-save-btn" class="px-4 py-2 rounded-xl text-xs font-bold text-white bg-chg-primary hover:bg-chg-hover shadow-md shadow-chg-primary/20 flex items-center gap-1.5">
+                        <i class="fa-solid fa-floppy-disk"></i> Save & Refresh Analytics
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Application Logic Script -->
+    <script src="/static/app.js"></script>
+</body>
+</html>
