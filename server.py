@@ -1271,16 +1271,36 @@ def delete_import_batch(batch_id: str, user: CurrentUser = Depends(get_current_u
 # ------------------------------------------------------------------------------
 # SERVE FRONTEND STATIC FILES & SPA ENTRY POINT
 # ------------------------------------------------------------------------------
-app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
+if os.path.exists(ASSETS_DIR):
+    try:
+        app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
+    except Exception:
+        pass
+
 if os.path.exists(STATIC_DIR):
-    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+    try:
+        app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+    except Exception:
+        pass
+
+@app.get("/api/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "database_exists": os.path.exists(DB_PATH),
+        "static_exists": os.path.exists(STATIC_DIR)
+    }
 
 @app.get("/")
 def serve_index():
-    index_file = os.path.join(STATIC_DIR, "index.html")
-    if os.path.exists(index_file):
-        return FileResponse(index_file)
-    return {"message": "Cleopatra Hospitals Group - Executive Intelligence API running. Frontend building..."}
+    candidates = [
+        os.path.join(STATIC_DIR, "index.html"),
+        os.path.join(BASE_DIR, "index.html")
+    ]
+    for c in candidates:
+        if os.path.exists(c):
+            return FileResponse(c)
+    return {"message": "Cleopatra Hospitals Group API running. Static files loading..."}
 
 if __name__ == "__main__":
     import uvicorn
